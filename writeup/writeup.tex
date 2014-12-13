@@ -76,6 +76,7 @@ The current implementation works for SQL libraries that are written purely in Py
 In the remaining part of this section, we'll talk about the implementation of each component of our implementation in details.
 
 \subsection{Symbolic Execution}
+\label{symbolic execution}
 
 The symbolic execution engine is implemented in Python, without modification to the Python interpreter or runtime. Strictly, it is implemented as a concolic execution engine that evaluates the program both concretely and symbolically at the same time.
 
@@ -93,21 +94,27 @@ The concolic execution engine starts from a default set of value assignments of 
 \section{Evaluation}
 \label{evaluation}
 % discuss our own SQL library benchmark and several SQL libraries we have found
+Our evaluation consists of two experiments. In the first experiment, we test our framework on python-sql 0.4~\cite{python-sql}. In the second experiment, we evaluate it on a small self-crafted SQL library benchmark to intentionally sweep common cases in practice. All experiments are run on an Intel Core i7-4712HQ machine with 16GB memory.
 
 \section{Discussion}
 \label{discussion}
 % discuss different solvers
-Constraint solving plays an important role in web program analysis for the purpose of test generation for coverage, bug finding and vulnerability detection. The reason is that solver-based analysis tools enable more precise analysis with the ability to generate intersting bug-revealing inputs. Furthermore, solver-based analysis tools are often more robust and easier to build than otherwise. However, many string solvers such as HAMPI~\cite{hampi}, DPRLE~\cite{dprle}, and REX~\cite{rex} support only string operations. Such logics are not sufficient expressive for many program analysis since non-string operations are also widely used in SQL query checking. More importantly, the string and non-string operations interact in subtle ways leading to program errors that are hard for humans to find without automation. Finally, a string-only analysis will likely miss pure integer or string-to-integer constraints (e.g., length of string) thus resulting in path constraints that are not precise enough, leading to false positive. Therefore, we adopt Z3-str, a satisfiability solver that supports a rich combined logic over string and non-string operations aimed at symbolic, static and dynamic analysis, as constraint solver in our framework.
+Constraint solving plays an important role in web program analysis for the purpose of test generation for coverage, bug finding and vulnerability detection. The reason is that solver-based analysis tools enable more precise analysis with the ability to generate intersting bug-revealing inputs. Furthermore, solver-based analysis tools are often more robust and easier to build than otherwise. However, many string solvers such as HAMPI~\cite{hampi}, DPRLE~\cite{dprle}, and REX~\cite{rex} support only string operations. Such logics are not sufficient expressive for many program analysis since non-string operations are also widely used in SQL query checking. More importantly, the string and non-string operations interact in subtle ways leading to program errors that are hard for humans to find without automation. Finally, a string-only analysis will likely miss pure integer or string-to-integer constraints (e.g., length of string) thus resulting in path constraints that are not precise enough, leading to false positive. Therefore, we adopt Z3-str~\cite{z3-str}, a satisfiability solver that supports a rich combined logic over string and non-string operations aimed at symbolic, static and dynamic analysis, as constraint solver in our framework.
+
+As illustrated in~\ref{symbolic execution}, the capabilities of our framework are heavily dependent on how powerful the constraint solver, Z3-str, is in terms of the number of supported string operations and the complexity of solvable expressions. 
 
 \section{Conclusion}
 \label{conclusion}
-In summary, we have made following contributions:
+We proposed a framework that detects potential SQL injection vulnerabilities in python SQL library using concolic execution. We encoded the SQL-injection condition as a set of constraints, and converted the problem to be a SAT problem determined by a constraint solver. Finally, we revealed future improvements on string solver and contributed a small SQL library benchmark for assessment on the effectiveness of proposed framework. In summary, we have made following contributions:
 \begin{itemize}
 \item We discovered certain internal mechanism widely adopted by some python SQL libraries, which prevents exposing complete SQL query at the library level.
 \item We revealed existing limtations on state-of-art string solvers.
 \item We designed our own SQL library benchmark to capture common cases in practice, thus thoroughly evaluating robustness of our framework.
 \item We proposed a practical SQL-injection condition encoding scheme.
 \end{itemize}
+
+\section{Acknowlegements}
+We would like to thank Taesoo Kim and Byoungyoung Lee for their help and comments. We also thank other classmates for their reviews.
 
 \bibliography{reference}
 \bibliographystyle{plain}
