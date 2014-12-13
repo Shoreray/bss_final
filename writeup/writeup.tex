@@ -11,7 +11,7 @@
 	Kangqi Ni,
 	Xiangyu Li
 	}
-	\IEEEauthorblockA{Georgia Institute of Technology, USA, \{xiangyu.li, kangqi.ni\}@cc.gatech.edu}
+	\IEEEauthorblockA{Georgia Institute of Technology, USA, \{kangqi.ni, xiangyu.li\}@cc.gatech.edu}
 }
 
 \maketitle
@@ -63,6 +63,30 @@ The contribution of the work includes:
 
 \section{Our Approach and Implementation}
 \label{approach}
+
+\subsection{Overview}
+
+Our proposed technique works on API method level. Given an API method of the SQL library, it verifies that no user input to the API method could possibly break out of its intended string context and be executed as SQL keywords.
+First, the method is executed symbolically, with the input parameters marked as symbolic values. The symbolic execution engine explores as many program paths as possible in a breadth-first manner, until the resource limitation is reached. For each program path it explored, it records the symbolic expression of the resulting final SQL query statement, which is expressed in terms of the symbolic inputs, as well as the path condition from the starting of the symbolic execution to the point where the final SQL query is generated. The tool then uses the symbolic expression of the SQL query and the corresponding path condition of that particular program path to construct the condition, that there are some input being able to break out of its string context and executed as SQL keywords, which in turn indicates a potential SQL injection vulnerability. This condition is sent to the constraint solver to determine its satisfiability. If the condition is satisfiable, it indicates that the vulnerability is present. In this case, the tool also gives an example input that trigger this vulnerability.
+
+We implemented this technique in Python. It consists of the symbolic execution engine, the SQL injection condition generator, and an off-the-shelf constraint solver.
+The current implementation works for SQL libraries that are written purely in Python, but the approach is generalizable to other languages.
+
+In the remaining part of this section, we'll talk about the implementation of each component of our implementation in details.
+
+\subsection{Symbolic Execution}
+
+The symbolic execution engine is implemented in Python, without modification to the Python interpreter or runtime. Strictly, it is implemented as a concolic execution engine that evaluates the program both concretely and symbolically at the same time.
+
+The concolic execution engine is implemented by extending primitive types in Python. The overloaded types, also referred to as concolic types, not only represents the concrete value of the original type, but also keeps track of the symbolic representation of its value, in terms of the symbolic inputs. The current implementation supports concolic int type and concolic string type, which are considered relavent to SQL injection vulnerabilities. Floating point numbers are not tracked symbolically because, in contrary to integer values, which could be used in string-indexing-related operations, they are unlikely to trigger injection vulnerabilities. Array index that depends on symbolic inputs are not tracked either because the string input from the user has to flow into the SQL query to trigger any potential injection vulnerability anyway.
+
+The concolic types track the symbolic expression by adding a attribute to the instance of the original primitive Python type, that points to expression tree of the current concolic value. The concolic types override the common operations of the original primitive types. When the overridden operation is performed on the concolic value, it calculates the concrete result as well as the new symbolic expression associated with the result, which is typically also a concolic type value.
+
+The concolic integer type supports all the built-in operations on integers. One special case is the comparison operation. Comparison of integer type values yields bool type values in Python. However, the bool type cannot be extended according to the language specification. We handle this by just adding its value to the constraint whenever we get a concolic bool value.
+
+The concolic string type partially supports string operations in Python. If the operation is not supported by the concolic type specifically, the program will just treat the string value as an ordinary string and keeps executing. However, in this case, the symbolic information associated with the concolic string would be lost. The set of operations supported by the concolic string type is actually determined by the operations that can be solved by the string constraint solver we used. This is because, although we can represent all string operations easily, but the resulting symbolic expression would not be useful if it cannot be understood by the string constraint solver.
+
+The concolic execution engine starts from a default set of value assignments of the symbolic variables. It evaluates the program concolically until the program finishes and collects the path condition. Then it systematically negates each clause in the path condition. For each new path condition generated in this way, it uses the constraint solver to determine whether it is satiefiable and comes up with an value assignments if it is. The concolic execution engine executes the program with the new value assignments and continue this process iteratively, until all program paths are explored or the resource limit is reached.
 
 
 \end{document}
