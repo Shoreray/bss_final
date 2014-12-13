@@ -113,7 +113,21 @@ Constraint solving plays an important role in web program analysis for the purpo
 As illustrated in~\ref{symbolic execution}, the capabilities of our framework are significantly constrained by how powerful the constraint solver is, in terms of the number of supported string operations and the complexity of solvable expressions. Due to the issue brought up in~\ref{evaluation}, our framework fails to exhibit its supposed effectiveness. However, the proposed approach holds promise in sync with the advance of techniques in string solvers.
 
 \subsection{Python Libraries}
-
+Many of the more mature databases support the concept of prepared statements. They can be thought of as a kind of compiled template for the SQL that a python SQL library wants to generate, that can be customized using variable parameters. Prepared statements have two major properties:
+\begin{itemize}
+\item The query only needs to be {\bf parsed once}, but can be executed multiple times with the same or different parameters. {\bf When the query is prepared, the database will analyze, compile and optimize its plan for executing the query}. By using a prepared statement the SQL library avoids repeating the analyze/compile/optimize cycle.
+\item If a SQL library exclusively uses prepared statements, the developer can be sure that no SQL injection will ocurr (however, if other portions of the query are being built up with unescaped input, SQL injection is still possible).
+\end{itemize}
+The typical workflow of using a prepared statement is as follows:
+\begin{itemize}
+\item {\bf Prepare}:
+The statement template is created by the SQL library and sent to the database management system (DBMS). Certain values are left unspecified, called \emph{parameters}, \emph{placeholders} or \emph{bind variables}.
+\item {\bf Assemble}:
+The DMBS parses, compiles, and performs query optimization on the statement template, and stores the result without executing it.
+\item {\bf Execute}:
+At a later time, the SQL Library supplies (or binds) values for the parameters, and the DBMS executes the statement (possibly returning a result). The SQL library may execute the statement as many times as it wants with different values.
+\end{itemize}
+Since our symbolic engine is to perform concolic execution on the internal library code, and capture the complete query before sent to the database, {\bf the design itself} sets up the scope of friendly python SQL libraries our framework supports. Unfortunately, both sqlite and SQLalchemy fall outside our scope, and thus are eliminated from our evaluation.
 
 \section{Conclusion}
 \label{conclusion}
