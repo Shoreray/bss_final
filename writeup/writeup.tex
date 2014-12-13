@@ -94,14 +94,26 @@ The concolic execution engine starts from a default set of value assignments of 
 \section{Evaluation}
 \label{evaluation}
 % discuss our own SQL library benchmark and several SQL libraries we have found
-Our evaluation consists of two experiments. In the first experiment, we test our framework on python-sql 0.4~\cite{python-sql}. In the second experiment, we evaluate it on a small self-crafted SQL library benchmark to intentionally sweep common cases in practice. All experiments are run on an Intel Core i7-4712HQ machine with 16GB memory.
+Our evaluation consists of two experiments. In the first experiment, we test our framework on python-sql 0.4~\cite{python-sql}. In the second experiment, we evaluate it on a small self-crafted SQL library to intentionally sweep common cases in practice. All experiments are testing internal logics of APIs exposed by the libraries, and run on an Intel Core i7-4712HQ machine with 16GB memory.
+
+\subsection{Python-sql}
+\label{python-sql}
+
+\subsection{Crafted Python SQL Library}
+\label{crafted-sql}
 
 \section{Discussion}
 \label{discussion}
-% discuss different solvers
-Constraint solving plays an important role in web program analysis for the purpose of test generation for coverage, bug finding and vulnerability detection. The reason is that solver-based analysis tools enable more precise analysis with the ability to generate intersting bug-revealing inputs. Furthermore, solver-based analysis tools are often more robust and easier to build than otherwise. However, many string solvers such as HAMPI~\cite{hampi}, DPRLE~\cite{dprle}, and REX~\cite{rex} support only string operations. Such logics are not sufficient expressive for many program analysis since non-string operations are also widely used in SQL query checking. More importantly, the string and non-string operations interact in subtle ways leading to program errors that are hard for humans to find without automation. Finally, a string-only analysis will likely miss pure integer or string-to-integer constraints (e.g., length of string) thus resulting in path constraints that are not precise enough, leading to false positive. Therefore, we adopt Z3-str~\cite{z3-str}, a satisfiability solver that supports a rich combined logic over string and non-string operations aimed at symbolic, static and dynamic analysis, as constraint solver in our framework.
+In this section, we are discussing the two main limitations of our framework. One is the constraint solving, and the other is the failure to work on several exising python libraries.
 
-As illustrated in~\ref{symbolic execution}, the capabilities of our framework are heavily dependent on how powerful the constraint solver, Z3-str, is in terms of the number of supported string operations and the complexity of solvable expressions. 
+\subsection{String Solver}
+% discuss different solvers
+Constraint solving plays an important role in web program analysis for the purpose of test generation for coverage, bug finding and vulnerability detection. The reason is that solver-based analysis tools enable more precise analysis with the ability to generate intersting bug-revealing inputs. Furthermore, solver-based analysis tools are often more robust and easier to build than otherwise. However, many string solvers such as HAMPI~\cite{hampi}, DPRLE~\cite{dprle}, and REX~\cite{rex} support only string operations. Such logics are not sufficient expressive for many program analysis since non-string operations are also widely used in SQL query checking. More importantly, the string and non-string operations interact in subtle ways leading to program errors that are hard for humans to find without automation. Finally, a string-only analysis will likely miss pure integer or string-to-integer constraints (e.g., length of string) thus resulting in path constraints that are not precise enough, leading to false positive. Therefore, we adopt Z3-str~\cite{z3-str}, most up-to-date satisfiability solver that supports a rich combined logic over string and non-string operations aimed at symbolic, static and dynamic analysis, as constraint solver in our framework.
+
+As illustrated in~\ref{symbolic execution}, the capabilities of our framework are significantly constrained by how powerful the constraint solver is, in terms of the number of supported string operations and the complexity of solvable expressions. Due to the issue brought up in~\ref{evaluation}, our framework fails to exhibit its supposed effectiveness. However, the proposed approach holds promise in sync with the advance of techniques in string solvers.
+
+\subsection{Python Libraries}
+
 
 \section{Conclusion}
 \label{conclusion}
