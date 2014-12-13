@@ -1,5 +1,6 @@
 \documentclass[conference]{IEEEtran}
 
+\usepackage{cite}
 \usepackage{listings}
 
 \begin{document}
@@ -11,7 +12,7 @@
 	Kangqi Ni,
 	Xiangyu Li
 	}
-	\IEEEauthorblockA{Georgia Institute of Technology, USA, \{kangqi.ni, xiangyu.li\}@cc.gatech.edu}
+	\IEEEauthorblockA{Georgia Institute of Technology, USA, \{kni3, xiangyu.li\}@cc.gatech.edu}
 }
 
 \maketitle
@@ -88,5 +89,27 @@ The concolic string type partially supports string operations in Python. If the 
 
 The concolic execution engine starts from a default set of value assignments of the symbolic variables. It evaluates the program concolically until the program finishes and collects the path condition. Then it systematically negates each clause in the path condition. For each new path condition generated in this way, it uses the constraint solver to determine whether it is satiefiable and comes up with an value assignments if it is. The concolic execution engine executes the program with the new value assignments and continue this process iteratively, until all program paths are explored or the resource limit is reached.
 
+
+\section{Evaluation}
+\label{evaluation}
+% discuss our own SQL library benchmark and several SQL libraries we have found
+
+\section{Discussion}
+\label{discussion}
+% discuss different solvers
+Constraint solving plays an important role in web program analysis for the purpose of test generation for coverage, bug finding and vulnerability detection. The reason is that solver-based analysis tools enable more precise analysis with the ability to generate intersting bug-revealing inputs. Furthermore, solver-based analysis tools are often more robust and easier to build than otherwise. However, many string solvers such as HAMPI~\cite{hampi}, DPRLE~\cite{dprle}, and REX~\cite{rex} support only string operations. Such logics are not sufficient expressive for many program analysis since non-string operations are also widely used in SQL query checking. More importantly, the string and non-string operations interact in subtle ways leading to program errors that are hard for humans to find without automation. Finally, a string-only analysis will likely miss pure integer or string-to-integer constraints (e.g., length of string) thus resulting in path constraints that are not precise enough, leading to false positive. Therefore, we adopt Z3-str, a satisfiability solver that supports a rich combined logic over string and non-string operations aimed at symbolic, static and dynamic analysis, in our work.
+
+\section{Conclusion}
+\label{conclusion}
+In summary, we have made following contributions:
+\begin{itemize}
+\item We discovered certain internal mechanism widely adopted by some python SQL libraries, which prevents from exposing complete SQL query at the library level.
+\item We revealed the current limtation on state-of-art string solvers.
+\item We designed our own SQL library benchmark to capture common cases in practice.
+\item We proposed a practical SQL-injection condition encoding scheme.
+\end{itemize}
+
+\bibliography{reference}
+\bibliographystyle{plain}
 
 \end{document}
