@@ -19,7 +19,7 @@
 
 \begin{abstract}
 
-SQL injection vulnerability used to be a prevalent security threat to web servers. Nowadays, it is most mitigated by the use of SQL libraries that pre-processes user inputs. Developers typically trust them to perform input sanitization. However, in case a SQL library does not do the input sanitization sufficiently, it could be a severe thread to all the web sites that uses the library. In this work, we proposed a technique that detects vulnerabilities in the SQL library code that could cause potential SQL injection of the application. We also conducted an empirical study to show the effectiveness of the technique.
+SQL injection vulnerability used to be a prevalent security threat to web servers. Nowadays, it is most mitigated by the use of SQL libraries that pre-processes user inputs. Developers typically trust them to perform input sanitization. However, in case a SQL library does not do the input sanitization sufficiently, it could be a severe threat to all the web sites that use the library. In this work, we proposed a technique that detects vulnerabilities in the SQL library code that could cause potential SQL injection of the application. We also conducted an empirical study to show the effectiveness of the technique.
 
 \end{abstract}
 
@@ -30,12 +30,14 @@ SQL injection vulnerability used to be a prevalent security threat to web server
 
 SQL injection vulnerabilities used to be a prevalent, and serious security threat to web applications. Because of insufficient validation and sanitization of untrusted user input, attackers could trick the server side code to execute in unintended ways by using carefully constructed inputs, causing unauthorized access to sensitive data.
 
-Most SQL injection attacks happen when the user inputs include strings. These string from user inputs are typically intended to be used only as string values, instead of SQL commands. However, if the string provided by the user could potentially break out of its string context, part of the user input would be used as SQL keywords, violating the intended semantic of the SQL query. 
+Most SQL injection attacks happen when the user inputs include strings. These strings from user inputs are typically intended to be used only as string values, instead of SQL commands. However, if the string provided by the user could potentially break out of its string context, part of the user input would be used as SQL keywords, violating the intended semantic of the SQL query. 
 
 Consider the following simple SQL query:
+\lstset{emph={name},emphstyle=\textit}
+\lstset{basicstyle=\ttfamily, keywordstyle=\bfseries, morekeywords={SELECT, FROM, WHERE}}
 \begin{lstlisting}[breaklines=true]
-SELECT * FROM login 
-WHERE username = `name';
+	SELECT * FROM login 
+	WHERE username = `name';
 \end{lstlisting}
 where `name' is an input from the user.
 If the user specified name to be ``fake-user' OR 1 = 1;'', the query result would return everything in the login table regardless of username. This is because the single quotation mark in the user-specified string broke out of the string context of the SQL query, and thus the ``OR 1 = 1;'' changed the semantic of the where clause.
@@ -95,7 +97,7 @@ The concolic execution engine starts from a default set of value assignments of 
 For each program path during the symbolic execution of the SQL library API method, we extract the symbolic representation of the full SQL query constructed by the SQL library code as well as its path condition down to the point where the SQL query is constructed. 
 
 For SQL libraries that output the final SQL qeury as a result, this is achieved by simple getting the symbolic expression of the final result and the whole path condition.
-For SQL libraries that produces the SQL query as an intermediate result to be sent to the SQL execution engine, we used a hook function that traces the function calls of the Python program to get the symbolic expressions and path conditions. The user of the tool need to specify the function and parameter to retrieve as the final SQL query.
+For SQL libraries that produce the SQL query as an intermediate result to be sent to the SQL execution engine, we used a hook function that traces the function calls of the Python program to get the symbolic expressions and path conditions. The user of the tool needs to specify the function and parameter to retrieve as the final SQL query.
 
 To avoid SQL injection vulnerabilities, the SQL library is expected to properly pre-process the strings from user inputs by escaping the single quotation characters with two consecutive single quotes. Thus, if the final SQL query could contain unescaped single quotation characters that is coming from user inputs, it is considered to be a potential SQL injection vulnerability.
 
@@ -107,7 +109,7 @@ We construct a constraint, that is solvable by the string solver, from the symbo
 
 \item Remove two consecutive single quotation marks in the final SQL query string. This is done by involing the symbolic version of the replace operation on the query string. These characters are escaped properly according to SQL syntax and are also considered safe.
 
-\item At this point, if the SQL query string could still contains single quotes, these single quotes must be from user input strings. We assert that the final SQL query, after the previous two steps of pre-processing, still potentially contains single quotation marks. This constraints conjuncted by the path condition is the condition for a potential SQL injection vulnerability to exist. 
+\item At this point, if the SQL query string could still contain single quotes, these single quotes must be from user input strings. We assert that the final SQL query, after the previous two steps of pre-processing, still potentially contains single quotation marks. This constraint conjuncted by the path condition is the condition for a potential SQL injection vulnerability to exist. 
 
 \end{itemize}
 
@@ -118,15 +120,15 @@ We send the SQL injection condition to the string solver to determine its satisf
 The tool is implemented and tested in Python 2.7 and might not work on Python versions higher than 3.0.
 The constraint solver we used is the Z3 solver from Microsoft. We also used the Z3-str extension to solve constraints that contains string operations.
 
-The performance and functionality is mainly restricted by the constraint solver. Currently, the Z3-str string solver does not perform very well on the string replacing operations. First, there is no global replacing operator. We need to iteratively replacing the first occurrence until the string does not contain the target sub-string anymore. Second, for string constraints that includes multiple string replacing operations, it took excessively long time to come up with the solution.
+The performance and functionality is mainly restricted by the constraint solver. Currently, the Z3-str string solver does not perform very well on the string replacing operations. First, there is no global replacing operator. We need to iteratively replacing the first occurrence until the string does not contain the target sub-string anymore. Second, for string constraints that include multiple string replacing operations, it took excessively long time to come up with the solution.
 
 
 \section{Evaluation}
 \label{evaluation}
 % discuss our own SQL library benchmark and several SQL libraries we have found
-Our evaluation consists of two experiments. In the first experiment, we test our framework on python-sql 0.4~\cite{python-sql}. In the second experiment, we evaluate it on a small self-crafted SQL library to intentionally sweep common cases in practice. All experiments are testing internal logics of APIs exposed by the libraries, and run on an Intel Core i7-4712HQ machine with 16GB memory.
+Our evaluation consists of two experiments. In the first experiment, we test our framework on python-SQL 0.4~\cite{python-sql}. In the second experiment, we evaluate it on a small self-crafted SQL library to intentionally sweep common cases in practice. All experiments are testing internal logics of APIs exposed by the libraries, and run on an Intel Core i7-4712HQ machine with 16GB memory.
 
-\subsection{Python-sql}
+\subsection{Python-SQL}
 \label{python-sql}
 
 \subsection{Crafted Python SQL Library}
