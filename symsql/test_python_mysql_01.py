@@ -6,7 +6,6 @@ import symsqlutils
 import z3
 
 pc_query_dict = {}
-query_list = []
 
 def sym_output(query):
     global query_pc_dict
@@ -18,7 +17,8 @@ def sym_output(query):
             is_first = False
         else:
             whole_pc = fuzzy.sym_and(whole_pc, pc)
-    query_list.append(query)
+    if whole_pc in pc_query_dict:
+        print("Warning: identical path condition is found!")
     pc_query_dict[whole_pc] = query
 
 def test_func():
@@ -30,7 +30,6 @@ def test_func():
 
 if __name__ == '__main__':
     fuzzy.concolic_test(test_func)
-    print query_list
     for pc, query in pc_query_dict.iteritems():
         result, example = symsqlutils.checkSqlInjection(query, pc)
         if result == z3.sat:

@@ -16,17 +16,17 @@ def sym_output(query):
             whole_pc = pc
             is_first = False
         else:
-            fuzzy.sym_and(whole_pc, pc)
+            whole_pc = fuzzy.sym_and(whole_pc, pc)
     if whole_pc in pc_query_dict:
         print("Warning: identical path condition is found!")
     pc_query_dict[whole_pc] = query
 
 def test_func():
-    sym_table_name = fuzzy.mk_str("sym_tname")
-    table = Table(sym_table_name)
-    sym_column = fuzzy.mk_str("sym_colname")
+    table_name = "tabel" 
+    table = Table(table_name)
+    column = "column"
     sym_where = fuzzy.mk_str("sym_wherename")
-    query = table.select(sym_column, sym_where)
+    query = table.select(column, sym_where)
     sym_output(query)
 
 if __name__ == '__main__':

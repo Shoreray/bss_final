@@ -1,37 +1,35 @@
-import symex.fuzzy as fuzzy
-
 class Table():
 
     def __init__(self, name):
-        self.name = name
+        self.__name = name
 
     def __str__(self):
-        return self.name
+        return self.__name
 
     def select(self, columns, where=None):
-        return str(Select(self.name, columns, where))
+        return str(Select(self.__name, columns, where))
 
 class Select():
 
     def __init__(self, table, columns, where):
-        self.table = self.sanity(table)
-        self.columns = self.sanity(columns)
-        self.where = self.sanity(where)
+        self.__table = self.sanity(table)
+        self.__columns = self.sanity(columns)
+        self.__where = self.sanity(where)
 
     def __str__(self):
-        if self.where == None:
-            return "SELECT '" + self.columns + "' FROM '" + self.table + "'"
+        if self.__where == None:
+            return "SELECT '" + self.__columns + "' FROM '" + self.__table + "'"
         else:
-            return "SELECT '" + self.columns + "' FROM '" \
-                + self.table + "' WHERE '" + self.where + "'"
+            return "SELECT '" + self.__columns + "' FROM '" \
+                + self.__table + "' WHERE '" + self.__columns + " = " + self.__where + "'"
 
     def sanity(self, raw_str):
         if raw_str == None:
             return None
         sanity_str = raw_str
-        if len(raw_str) < 50:
+        if len(raw_str) <= 50:
             # drop '"'
-            sanity_str = sanity_str.replace('"', '')
+            sanity_str = sanity_str.replace('"', "")
             # drop "'"
             sanity_str = sanity_str.replace("'", "")
         return sanity_str       
