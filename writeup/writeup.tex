@@ -43,7 +43,7 @@ To prevent this, the server side need to perform appropriate sanitization of use
 
 Recently, the threat of SQL injection vulnerabilities is greatly mitigated because the widely use of higher-level SQL libraries instead of constructing the raw query statement by the application itself and sending it to the SQL engine directly. The SQL libraries are typically well written and tested in terms of sanitizing user inputs and preventing SQL injections. 
 
-However, in case that the SQL library being used did not perform sufficient inputs sanitization and thus has SQL injection vulnerabilities, the consequence is severe. Application developers usually trust SQL library not to contain this kind of issues and will rely on the library code to perform anti-sql-injection processing for them. Such vulnerabilities are unlikely to be discovered by application developers. Also, a SQL library is potentially used by large population of websites. The security threat has more impact than the security vulnerabilities in one particular website. Moreover, if the vulnerable SQL library is open-source, the attackers would have full knowledge of the bug and could device sophisticated ways to exploit it. Thus, during the development of a SQL library, the developers of the library code wanted to make sure that there is absolutely no such vulnerabilities in the library code.
+However, in case that the SQL library being used did not perform sufficient inputs sanitization and thus has SQL injection vulnerabilities, the consequence is severe. Application developers usually trust SQL library not to contain this kind of issues and will rely on the library code to perform anti-SQL-injection processing for them. Such vulnerabilities are unlikely to be discovered by application developers. Also, a SQL library is potentially used by large population of websites. The security threat has more impact than the security vulnerabilities in one particular website. Moreover, if the vulnerable SQL library is open-source, the attackers would have full knowledge of the bug and could devise sophisticated ways to exploit it. Thus, during the development of a SQL library, the developers of the library code wanted to make sure that there is absolutely no such vulnerabilities in the library code.
 
 In this work, we present a technique that detects potential SQL injection vulnerabilities in SQL library code using symbolic execution. The technique works on the SQL-library-API level. In particular, it works on SQL-library APIs that produces valid SQL queries and checks whether the resulting SQL query could potentially expose injection vulnerability, for any arbitrary user inputs. Given an API method in the SQL library, the technique executes the API method symbolically, with the user inputs to the API method being marked as symbolic values. It tracks how the user inputs are used to produce the final SQL query and uses contraint solvers to determine whether there could be any user inputs that manifests a SQL injection attack. We implemented the technique in Python and the implementation works on Python programs.
 
@@ -68,7 +68,7 @@ The contribution of the work includes:
 \subsection{Overview}
 
 Our proposed technique works on API method level. Given an API method of the SQL library, it verifies that no user input to the API method could possibly break out of its intended string context and be executed as SQL keywords.
-First, the method is executed symbolically, with the input parameters marked as symbolic values. The symbolic execution engine explores as many program paths as possible in a breadth-first manner, until the resource limitation is reached. For each program path it explored, it records the symbolic expression of the resulting final SQL query statement, which is expressed in terms of the symbolic inputs, as well as the path condition from the starting of the symbolic execution to the point where the final SQL query is generated. The tool then uses the symbolic expression of the SQL query and the corresponding path condition of that particular program path to construct the condition, that there are some input being able to break out of its string context and executed as SQL keywords, which in turn indicates a potential SQL injection vulnerability. This condition is sent to the constraint solver to determine its satisfiability. If the condition is satisfiable, it indicates that the vulnerability is present. In this case, the tool also gives an example input that trigger this vulnerability.
+First, the method is executed symbolically, with the input parameters marked as symbolic values. The symbolic execution engine explores as many program paths as possible in a breadth-first manner, until the resource limitation is reached. For each program path it explored, it records the symbolic expression of the resulting final SQL query statement, which is expressed in terms of the symbolic inputs, as well as the path condition from the starting of the symbolic execution to the point where the final SQL query is generated. The tool then uses the symbolic expression of the SQL query and the corresponding path condition of that particular program path to construct the condition, that there are some input being able to break out of its string context and executed as SQL keywords, which in turn indicates a potential SQL injection vulnerability. This condition is sent to the constraint solver to determine its satisfiability. If the condition is satisfiable, it indicates that the vulnerability is present. In this case, the tool also gives an example input that triggers this vulnerability.
 
 We implemented this technique in Python. It consists of the symbolic execution engine, the SQL injection condition generator, and an off-the-shelf constraint solver.
 The current implementation works for SQL libraries that are written purely in Python, but the approach is generalizable to other languages.
@@ -76,10 +76,11 @@ The current implementation works for SQL libraries that are written purely in Py
 In the remaining part of this section, we'll talk about the implementation of each component of our implementation in details.
 
 \subsection{Symbolic Execution}
+\label{symbolic execution}
 
 The symbolic execution engine is implemented in Python, without modification to the Python interpreter or runtime. Strictly, it is implemented as a concolic execution engine that evaluates the program both concretely and symbolically at the same time.
 
-The concolic execution engine is implemented by extending primitive types in Python. The overloaded types, also referred to as concolic types, not only represents the concrete value of the original type, but also keeps track of the symbolic representation of its value, in terms of the symbolic inputs. The current implementation supports concolic int type and concolic string type, which are considered relavent to SQL injection vulnerabilities. Floating point numbers are not tracked symbolically because, in contrary to integer values, which could be used in string-indexing-related operations, they are unlikely to trigger injection vulnerabilities. Array index that depends on symbolic inputs are not tracked either because the string input from the user has to flow into the SQL query to trigger any potential injection vulnerability anyway.
+The concolic execution engine is implemented by extending primitive types in Python. The overloaded types, also referred to as concolic types, not only represents the concrete value of the original type, but also keeps track of the symbolic representation of its value, in terms of the symbolic inputs. The current implementation supports concolic int type and concolic string type, which are considered relavent to SQL injection vulnerabilities. Floating point numbers are not tracked symbolically because, in contrary to integer values, which could be used in string-indexing-related operations, they are unlikely to trigger injection vulnerabilities. Array index that depends on symbolic inputs is not tracked either because the string input from the user has to flow into the SQL query to trigger any potential injection vulnerability anyway.
 
 The concolic types track the symbolic expression by adding a attribute to the instance of the original primitive Python type, that points to expression tree of the current concolic value. The concolic types override the common operations of the original primitive types. When the overridden operation is performed on the concolic value, it calculates the concrete result as well as the new symbolic expression associated with the result, which is typically also a concolic type value.
 
@@ -123,21 +124,53 @@ The performance and functionality is mainly restricted by the constraint solver.
 \section{Evaluation}
 \label{evaluation}
 % discuss our own SQL library benchmark and several SQL libraries we have found
+Our evaluation consists of two experiments. In the first experiment, we test our framework on python-sql 0.4~\cite{python-sql}. In the second experiment, we evaluate it on a small self-crafted SQL library to intentionally sweep common cases in practice. All experiments are testing internal logics of APIs exposed by the libraries, and run on an Intel Core i7-4712HQ machine with 16GB memory.
+
+\subsection{Python-sql}
+\label{python-sql}
+
+\subsection{Crafted Python SQL Library}
+\label{crafted-sql}
 
 \section{Discussion}
 \label{discussion}
+In this section, we are discussing the two main limitations of our framework. One is the constraint solving, and the other is the failure to work on several exising python libraries.
+
+\subsection{String Solver}
 % discuss different solvers
-Constraint solving plays an important role in web program analysis for the purpose of test generation for coverage, bug finding and vulnerability detection. The reason is that solver-based analysis tools enable more precise analysis with the ability to generate intersting bug-revealing inputs. Furthermore, solver-based analysis tools are often more robust and easier to build than otherwise. However, many string solvers such as HAMPI~\cite{hampi}, DPRLE~\cite{dprle}, and REX~\cite{rex} support only string operations. Such logics are not sufficient expressive for many program analysis since non-string operations are also widely used in SQL query checking. More importantly, the string and non-string operations interact in subtle ways leading to program errors that are hard for humans to find without automation. Finally, a string-only analysis will likely miss pure integer or string-to-integer constraints (e.g., length of string) thus resulting in path constraints that are not precise enough, leading to false positive. Therefore, we adopt Z3-str, a satisfiability solver that supports a rich combined logic over string and non-string operations aimed at symbolic, static and dynamic analysis, in our work.
+Constraint solving plays an important role in web program analysis for the purpose of test generation for coverage, bug finding and vulnerability detection. The reason is that solver-based analysis tools enable more precise analysis with the ability to generate intersting bug-revealing inputs. Furthermore, solver-based analysis tools are often more robust and easier to build than otherwise. However, many string solvers such as HAMPI~\cite{hampi}, DPRLE~\cite{dprle}, and REX~\cite{rex} support only string operations. Such logics are not sufficient expressive for many program analysis since non-string operations are also widely used in SQL query checking. More importantly, the string and non-string operations interact in subtle ways leading to program errors that are hard for humans to find without automation. Finally, a string-only analysis will likely miss pure integer or string-to-integer constraints (e.g., length of string) thus resulting in path constraints that are not precise enough, leading to false positive. Therefore, we adopt Z3-str~\cite{z3-str}, most up-to-date satisfiability solver that supports a rich combined logic over string and non-string operations aimed at symbolic, static and dynamic analysis, as constraint solver in our framework.
+
+As illustrated in~\ref{symbolic execution}, the capabilities of our framework are significantly constrained by how powerful the constraint solver is, in terms of the number of supported string operations and the complexity of solvable expressions. Due to the issue brought up in~\ref{evaluation}, our framework fails to exhibit its supposed effectiveness. However, the proposed approach holds promise in sync with the advance of techniques in string solvers.
+
+\subsection{Python Libraries}
+Many of the more mature databases support the concept of prepared statements. They can be thought of as a kind of compiled template for the SQL that a python SQL library wants to generate, that can be customized using variable parameters. Prepared statements have two major properties:
+\begin{itemize}
+\item The query only needs to be {\bf parsed once}, but can be executed multiple times with the same or different parameters. {\bf When the query is prepared, the database will analyze, compile and optimize its plan for executing the query}. By using a prepared statement the SQL library avoids repeating the analyze/compile/optimize cycle.
+\item If a SQL library exclusively uses prepared statements, the developer can be sure that no SQL injection will ocurr (however, if other portions of the query are being built up with unescaped input, SQL injection is still possible).
+\end{itemize}
+The typical workflow of using a prepared statement is as follows:
+\begin{itemize}
+\item {\bf Prepare}:
+The statement template is created by the SQL library and sent to the database management system (DBMS). Certain values are left unspecified, called \emph{parameters}, \emph{placeholders} or \emph{bind variables}.
+\item {\bf Assemble}:
+The DMBS parses, compiles, and performs query optimization on the statement template, and stores the result without executing it.
+\item {\bf Execute}:
+At a later time, the SQL Library supplies (or binds) values for the parameters, and the DBMS executes the statement (possibly returning a result). The SQL library may execute the statement as many times as it wants with different values.
+\end{itemize}
+Since our symbolic engine is to perform concolic execution on the internal library code, and capture the complete query before sent to the database, {\bf the design itself} sets up the scope of friendly python SQL libraries our framework supports. Unfortunately, both sqlite and SQLalchemy fall outside our scope, and thus are eliminated from our evaluation.
 
 \section{Conclusion}
 \label{conclusion}
-In summary, we have made following contributions:
+We proposed a framework that detects potential SQL injection vulnerabilities in python SQL library using concolic execution. We encoded the SQL-injection condition as a set of constraints, and converted the problem to be a SAT problem determined by a constraint solver. Finally, we revealed future improvements on string solver and contributed a small SQL library benchmark for assessment on the effectiveness of proposed framework. In summary, we have made following contributions:
 \begin{itemize}
-\item We discovered certain internal mechanism widely adopted by some python SQL libraries, which prevents from exposing complete SQL query at the library level.
-\item We revealed the current limtation on state-of-art string solvers.
-\item We designed our own SQL library benchmark to capture common cases in practice.
+\item We discovered certain internal mechanism widely adopted by some python SQL libraries, which prevents exposing complete SQL query at the library level.
+\item We revealed existing limtations on state-of-art string solvers.
+\item We designed our own SQL library benchmark to capture common cases in practice, thus thoroughly evaluating robustness of our framework.
 \item We proposed a practical SQL-injection condition encoding scheme.
 \end{itemize}
+
+\section{Acknowlegements}
+We would like to thank Taesoo Kim and Byoungyoung Lee for their help and comments. We also thank other classmates for their reviews.
 
 \bibliography{reference}
 \bibliographystyle{plain}
