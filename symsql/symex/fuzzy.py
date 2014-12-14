@@ -8,6 +8,7 @@ import signal
 import operator
 import inspect
 import __builtin__
+import errno
 
 ## Our AST structure
 
@@ -435,6 +436,11 @@ def fork_and_check(constr):
     res = parent_conn.recv()
   except EOFError:
     res = (z3.unknown, None)
+  except IOError, e:
+    if e.errno == errno.EINTR:
+      res = (z3.unknown, None)
+    else:
+      raise
   finally:
     signal.alarm(0)
 
