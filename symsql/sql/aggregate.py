@@ -43,7 +43,7 @@ class Aggregate(Expression):
         self.expression = expression
 
     def __str__(self):
-        return self._sql + "(" + self.expression +")"
+        return str(self._sql) + "(" + str(self.expression) +")"
         # return '%s(%s)' % (self._sql, self.expression)
 
     @property
