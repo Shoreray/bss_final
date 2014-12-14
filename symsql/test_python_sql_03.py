@@ -17,8 +17,6 @@ def sym_output(query):
             is_first = False
         else:
             whole_pc = fuzzy.sym_and(whole_pc, pc)
-    if whole_pc in pc_query_dict:
-        print("Warning: identical path condition is found!")
     pc_query_dict[whole_pc] = query
 
 def test_func():

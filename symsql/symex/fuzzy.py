@@ -488,7 +488,7 @@ class concolic_int(int):
     return concolic_int(sym_plus(ast(self), ast(o)), res)
 
   def __radd__(self, o):
-    res = o + self.__v
+    res = str(o) + str(self.__v)
     return concolic_int(sym_plus(ast(o), ast(self)), res)
 
   def __sub__(self, o):
@@ -589,8 +589,11 @@ class concolic_str(str):
     return concolic_bool(sym_endswith(ast(self), ast(o)), res)
 
   def __getitem__(self, i):
-    res = self.__v[i]
-    return concolic_str(sym_substring(ast(self), ast(i), ast(1)), res)
+    if isinstance(i, tuple):
+        return self.__getslice__(i[0], i[1])
+    else:
+        res = self.__v[i]
+        return concolic_str(sym_substring(ast(self), ast(i), ast(1)), res)
 
   def __getslice__(self, i, j):
     if j == 9223372036854775807 or j == 2147483647:
