@@ -19,7 +19,7 @@
 
 \begin{abstract}
 
-To be written.
+SQL injection vulnerability used to be a prevalent security threat to web servers. Nowadays, it is most mitigated by the use of SQL libraries that pre-processes user inputs. Developers typically trust them to perform input sanitization. However, in case a SQL library does not do the input sanitization sufficiently, it could be a severe thread to all the web sites that uses the library. In this work, we proposed a technique that detects vulnerabilities in the SQL library code that could cause potential SQL injection of the application. We also conducted an empirical study to show the effectiveness of the technique.
 
 \end{abstract}
 
@@ -85,9 +85,39 @@ The concolic types track the symbolic expression by adding a attribute to the in
 
 The concolic integer type supports all the built-in operations on integers. One special case is the comparison operation. Comparison of integer type values yields bool type values in Python. However, the bool type cannot be extended according to the language specification. We handle this by just adding its value to the constraint whenever we get a concolic bool value.
 
-The concolic string type partially supports string operations in Python. If the operation is not supported by the concolic type specifically, the program will just treat the string value as an ordinary string and keeps executing. However, in this case, the symbolic information associated with the concolic string would be lost. The set of operations supported by the concolic string type is actually determined by the operations that can be solved by the string constraint solver we used. This is because, although we can represent all string operations easily, but the resulting symbolic expression would not be useful if it cannot be understood by the string constraint solver.
+The concolic string type partially supports string operations in Python. If the operation is not supported by the concolic type specifically, the program will just treat the string value as an ordinary string and keeps executing. However, in this case, the symbolic information associated with the concolic string would be lost. The set of operations supported by the concolic string type is actually determined by the operations that can be solved by the string constraint solver we used. This is because, although we can represent all string operations easily, but the resulting symbolic expression would not be useful if it cannot be understood by the string constraint solver. Currently, we support string comparison, concatenation, getting length, contains, startswith, endswith, slicing, finding sub-string, stripping, splitting and replacing operations.
 
 The concolic execution engine starts from a default set of value assignments of the symbolic variables. It evaluates the program concolically until the program finishes and collects the path condition. Then it systematically negates each clause in the path condition. For each new path condition generated in this way, it uses the constraint solver to determine whether it is satiefiable and comes up with an value assignments if it is. The concolic execution engine executes the program with the new value assignments and continue this process iteratively, until all program paths are explored or the resource limit is reached.
+
+\subsection{SQL Injection Condition Construction}
+
+For each program path during the symbolic execution of the SQL library API method, we extract the symbolic representation of the full SQL query constructed by the SQL library code as well as its path condition down to the point where the SQL query is constructed. 
+
+For SQL libraries that output the final SQL qeury as a result, this is achieved by simple getting the symbolic expression of the final result and the whole path condition.
+For SQL libraries that produces the SQL query as an intermediate result to be sent to the SQL execution engine, we used a hook function that traces the function calls of the Python program to get the symbolic expressions and path conditions. The user of the tool need to specify the function and parameter to retrieve as the final SQL query.
+
+To avoid SQL injection vulnerabilities, the SQL library is expected to properly pre-process the strings from user inputs by escaping the single quotation characters with two consecutive single quotes. Thus, if the final SQL query could contain unescaped single quotation characters that is coming from user inputs, it is considered to be a potential SQL injection vulnerability.
+
+We construct a constraint, that is solvable by the string solver, from the symbolic expression of the SQL query statement and the path condition. According to the aforementioned principle, the SQL injection condition is constructed in the following steps:
+
+\begin{itemize}
+
+\item Remove the single quotation literals from the expression tree that are concatenated to the SQL query string by the library code. This is done by walking through the symbolic expression tree of the final SQL query string, and removing all the single quotation literals that are connected to the expression tree by the concatenation operation. We remove these single quotation characters because they are added explicitly to retain the legitimate form of the SQL statement structure and are considered to be legal and safe.
+
+\item Remove two consecutive single quotation marks in the final SQL query string. This is done by involing the symbolic version of the replace operation on the query string. These characters are escaped properly according to SQL syntax and are also considered safe.
+
+\item At this point, if the SQL query string could still contains single quotes, these single quotes must be from user input strings. We assert that the final SQL query, after the previous two steps of pre-processing, still potentially contains single quotation marks. This constraints conjuncted by the path condition is the condition for a potential SQL injection vulnerability to exist. 
+
+\end{itemize}
+
+We send the SQL injection condition to the string solver to determine its satisfiability. If it is satisfiable, it indicates that there is a potential SQL injection vulnerability. In this case, the solver also generates an input to manifest this vulnerability.
+
+\subsection{Notes of the Implementation}
+
+The tool is implemented and tested in Python 2.7 and might not work on Python versions higher than 3.0.
+The constraint solver we used is the Z3 solver from Microsoft. We also used the Z3-str extension to solve constraints that contains string operations.
+
+The performance and functionality is mainly restricted by the constraint solver. Currently, the Z3-str string solver does not perform very well on the string replacing operations. First, there is no global replacing operator. We need to iteratively replacing the first occurrence util the string does not contain the target sub-string anymore. Second, for string contraints that includes multiple string replacing operations, it took excessively long time to come up with the solution.
 
 
 \section{Evaluation}
