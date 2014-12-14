@@ -118,7 +118,7 @@ We send the SQL injection condition to the string solver to determine its satisf
 The tool is implemented and tested in Python 2.7 and might not work on Python versions higher than 3.0.
 The constraint solver we used is the Z3 solver from Microsoft. We also used the Z3-str extension to solve constraints that contains string operations.
 
-The performance and functionality is mainly restricted by the constraint solver. Currently, the Z3-str string solver does not perform very well on the string replacing operations. First, there is no global replacing operator. We need to iteratively replacing the first occurrence util the string does not contain the target sub-string anymore. Second, for string contraints that includes multiple string replacing operations, it took excessively long time to come up with the solution.
+The performance and functionality is mainly restricted by the constraint solver. Currently, the Z3-str string solver does not perform very well on the string replacing operations. First, there is no global replacing operator. We need to iteratively replacing the first occurrence until the string does not contain the target sub-string anymore. Second, for string constraints that includes multiple string replacing operations, it took excessively long time to come up with the solution.
 
 
 \section{Evaluation}
