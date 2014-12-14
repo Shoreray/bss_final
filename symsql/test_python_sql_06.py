@@ -9,7 +9,7 @@ pc_query_dict = {}
 
 def sym_output(query):
     global query_pc_dict
-    whole_pc = fuzzy.const_bool(True)
+    whole_pc = fuzzy.const_bool(True) 
     is_first = True
     for pc in fuzzy.cur_path_constr:
         if is_first:
@@ -28,11 +28,8 @@ def test_func():
     sym_column_2 = fuzzy.mk_str("sym_colname_2")
     query = table.select(getattr(table, sym_column_1), \
                          getattr(table, sym_column_2))
-    sym_str_1 = fuzzy.mk_str("sym_str_1")
-    sym_str_2 = fuzzy.mk_str("sym_str_2")
     sym_column_3 = fuzzy.mk_str("sym_colname_3")
-    query.where = (getattr(table, sym_column_2) == sym_str_1) & \
-                  (getattr(table, sym_column_3) == sym_str_2) 
+    query.where = getattr(table, sym_column_2) == getattr(table, sym_column_3)
     query = symsqlutils.symStrInterpolation(query)
     sym_output(query)
 

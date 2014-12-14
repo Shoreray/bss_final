@@ -28,8 +28,11 @@ def test_func():
     sym_column_2 = fuzzy.mk_str("sym_colname_2")
     query = table.select(getattr(table, sym_column_1), \
                          getattr(table, sym_column_2))
-    sym_str = fuzzy.mk_str("sym_str")
-    query.where = getattr(table, sym_column_2) == sym_str 
+    sym_str_1 = fuzzy.mk_str("sym_str_1")
+    sym_str_2 = fuzzy.mk_str("sym_str_2")
+    sym_column_3 = fuzzy.mk_str("sym_colname_3")
+    query.where = (getattr(table, sym_column_2) == sym_str_1) & \
+                  (getattr(table, sym_column_3) == sym_str_2) 
     query = symsqlutils.symStrInterpolation(query)
     sym_output(query)
 
