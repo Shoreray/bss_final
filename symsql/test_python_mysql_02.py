@@ -20,7 +20,7 @@ def sym_output(query):
     pc_query_dict[whole_pc] = query
 
 def test_func():
-    table_name = "tabel" 
+    table_name = "table" 
     table = Table(table_name)
     column = "column"
     sym_where = fuzzy.mk_str("sym_wherename")
