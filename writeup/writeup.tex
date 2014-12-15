@@ -116,6 +116,7 @@ We construct a constraint, that is solvable by the string solver, from the symbo
 We send the SQL injection condition to the string solver to determine its satisfiability. If it is satisfiable, it indicates that there is a potential SQL injection vulnerability. In this case, the solver also generates an input to manifest this vulnerability.
 
 \subsection{Notes of the Implementation}
+\label{notes}
 
 The tool is implemented and tested in Python 2.7 and might not work on Python versions higher than 3.0.
 The constraint solver we used is the Z3 solver from Microsoft. We also used the Z3-str extension to solve constraints that contains string operations.
@@ -130,9 +131,66 @@ Our evaluation consists of two experiments. In the first experiment, we test our
 
 \subsection{Python-SQL}
 \label{python-sql}
+Python-SQL is a real-world python library, which is to help users construct SQL queries in a pythonic way. The library provides a bunch of APIs facilitating the SQL query construction procedure, and we made 6 test cases based on the common use scenarios shown on its official website~\cite{python-sql}. Three of them are testing simple selects, and the others are testing selects with where conditons. Inside each test case, we symbolize all the user-provided strings in the query, and construct constraints and interact with constraint solver on-the-fly. A concrete example of constructed constraints is given in~\ref{crafted-sql}.
 
 \subsection{Crafted Python SQL Library}
 \label{crafted-sql}
+In second experiment, we manually crafted a python SQL library, which dropped all the quotes from external data by invoking \textit{sanity()} on per user input. For demonstration purpose, we deliberately mined a vulnerability in the checking logic, in which logic functions properly if and only if the input string is of length no greater than 50.
+
+\lstset{basicstyle=\ttfamily, keywordstyle=\bfseries, morekeywords={def, len, if, return}}
+\begin{lstlisting}[frame=single, breaklines=true]
+   def sanity(self, raw_str): 
+     if len(raw_str) <= 50:
+        # drop "
+        sanity_str = sanity_str.replace(`"', "")
+        # drop '
+        sanity_str = sanity_str.replace("'", "")
+     return sanity_str
+\end{lstlisting}
+
+We provided two test cases for both simple selects and selects with where conditions. For example, \textit{test\_func()} is to test internal logics of our crafted python SQL library on building up selects with where conditions. As is shown below, \textit{test\_func()} subsequently invokes \textit{Table()} and \textit{select()} APIs exposed by the library to form a query in format of "\textbf{SELECT} column \textbf{FROM} table \textbf{WHERE} column = \emph{sym\_where}".
+
+\lstset{emph={fuzzy, mk_str},emphstyle=\textbf}
+\begin{lstlisting}[frame=single, breaklines=true]
+   def test_func():
+     table_name = "table"
+     table = Table(table_name)
+     column = "column"
+     sym_where = fuzzy.mk_str("sym_wherename")
+     query = table.select(column, sym_where)
+     sym_output(query)
+\end{lstlisting}
+
+Note that \emph{sym\_where} is marked as a symbol through \textbf{fuzzy.mk\_str()}, meaning \emph{sym\_where} could be arbitrary string and our framework verifies its internal implementation by ruling out all the possibilities.
+
+The following two figures depict how constraints look like in two different cases, where the length of user input is equal to and greater than 50 respectively. In the former case, the checking logic takes effect and our framework verifies its correctness as expected. The interesting part comes in the second case where our framework captures the defect and warns the developers of potential SQL injections with a concrete example which triggers the bug.
+
+\lstset{basicstyle=\ttfamily, keywordstyle=\bfseries, morekeywords={Length, SAFE, UNSAFE}}
+\begin{lstlisting}[basicstyle=\footnotesize, frame=single, breaklines=true]
+And(Contains(Concat(Concat("SELECT column FROM table WHERE column = ",
+                           Replace(sym_wherename, """, "")),
+                    ""),
+             "`"),
+    And(And(And(And((Length(sym_wherename) < 50) == False,
+                    (Length(sym_wherename) > 50) == False,
+                Contains(sym_wherename, """) == True),
+            Contains(Replace(sym_wherename, """, ""), """) ==
+            False),
+        Contains(Replace(sym_wherename, """, ""), "'") ==
+        False))
+Result: SAFE
+\end{lstlisting}
+
+\begin{lstlisting}[basicstyle=\footnotesize, frame=single, breaklines=true]
+And(Contains(Concat(Concat("SELECT column FROM table WHERE column = ",
+                           sym_wherename),
+                    ""),
+             "`"),
+    And((Length(sym_wherename) < 50) == False,
+        (Length(sym_wherename) > 50) == True))
+Result: UNSAFE
+`aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+\end{lstlisting}
 
 \section{Discussion}
 \label{discussion}
@@ -142,7 +200,7 @@ In this section, we are discussing the two main limitations of our framework. On
 % discuss different solvers
 Constraint solving plays an important role in web program analysis for the purpose of test generation for coverage, bug finding and vulnerability detection. The reason is that solver-based analysis tools enable more precise analysis with the ability to generate intersting bug-revealing inputs. Furthermore, solver-based analysis tools are often more robust and easier to build than otherwise. However, many string solvers such as HAMPI~\cite{hampi}, DPRLE~\cite{dprle}, and REX~\cite{rex} support only string operations. Such logics are not sufficient expressive for many program analysis since non-string operations are also widely used in SQL query checking. More importantly, the string and non-string operations interact in subtle ways leading to program errors that are hard for humans to find without automation. Finally, a string-only analysis will likely miss pure integer or string-to-integer constraints (e.g., length of string) thus resulting in path constraints that are not precise enough, leading to false positive. Therefore, we adopt Z3-str~\cite{z3-str}, most up-to-date satisfiability solver that supports a rich combined logic over string and non-string operations aimed at symbolic, static and dynamic analysis, as constraint solver in our framework.
 
-As illustrated in~\ref{symbolic execution}, the capabilities of our framework are significantly constrained by how powerful the constraint solver is, in terms of the number of supported string operations and the complexity of solvable expressions. Due to the issue brought up in~\ref{evaluation}, our framework fails to exhibit its supposed effectiveness. However, the proposed approach holds promise in sync with the advance of techniques in string solvers.
+As illustrated in~\ref{symbolic execution}, the capabilities of our framework are significantly constrained by how powerful the constraint solver is, in terms of the number of supported string operations and the complexity of solvable expressions. Due to the issue brought up in~\ref{notes}, our framework fails to exhibit its supposed effectiveness. However, the proposed approach holds promise in sync with the advance of techniques in string solvers.
 
 \subsection{Python Libraries}
 Many of the more mature databases support the concept of prepared statements. They can be thought of as a kind of compiled template for the SQL that a python SQL library wants to generate, that can be customized using variable parameters. Prepared statements have two major properties:
