@@ -1,0 +1,17 @@
+1. Test cases for Python-SQL
+test_python_sql_0[1-6].py
+
+2. Test cases for self-crafted python SQL library
+test_python_mysql_0[1-2].py
+
+3. Self-crafted python SQL library
+mysql.py
+
+4. How to run
+simply run the testing python script (e.g., python test_python_mysql_01.py)
+
+5. Possible issue
+You may need to buil your own libz3str.so to run the test cases successfully.
+Please refer to https://sites.google.com/site/z3strsolver/getting-started for 
+more details on how to build libz3str.so. libz3str.so should be place in symex 
+directory.
