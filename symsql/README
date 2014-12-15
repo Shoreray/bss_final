@@ -11,7 +11,7 @@ mysql.py
 simply run the testing python script (e.g., python test_python_mysql_01.py)
 
 5. Possible issue
-You may need to buil your own libz3str.so to run the test cases successfully.
+You may need to build your own libz3str.so to run the test cases successfully.
 Please refer to https://sites.google.com/site/z3strsolver/getting-started for 
 more details on how to build libz3str.so. libz3str.so should be place in symex 
 directory.
